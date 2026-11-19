@@ -1,10 +1,10 @@
 // Offline cache for the web/PWA build. Bump VERSION when files change.
-const VERSION = 'quillpad-v1';
+const VERSION = 'quillpad-v2';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/main.js', 'js/state.js', 'js/doc.js', 'js/history.js', 'js/brush.js', 'js/quickshape.js', 'js/color.js',
   'js/filters.js', 'js/editor.js', 'js/input.js', 'js/ui.js', 'js/icons.js', 'js/gallery.js', 'js/storage.js',
-  'js/psd.js', 'js/share.js', 'js/timelapse.js',
+  'js/psd.js', 'js/share.js', 'js/timelapse.js', 'js/animation.js', 'js/gif.js',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png',
 ];
 
