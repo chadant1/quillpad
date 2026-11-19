@@ -12,6 +12,8 @@ A pocket sketching & painting studio for **iPhone and Android**, built with a fa
 | Area | What you get |
 | --- | --- |
 | **Brushes** | 13 brushes (Studio Pen, Technical Pen, Monoline, Calligraphy, Sketch Pencil, Charcoal, Marker, Gouache, Watercolor Wash, Soft/Hard Airbrush, Spray Paint, Pixel Square). Stamp-based engine with stylus pressure, fixed or direction-following angle, spacing, hardness, flow, grain, jitter, scatter, start taper and **StreamLine** smoothing. Every setting is editable in the brush studio and remembered per brush. |
+| **Stylus** | Apple Pencil (iPad) and pressure styluses like Samsung S Pen: pressure controls size/opacity with an adjustable pressure curve, **tilt shading** (lay the pen down to shade with a wider, softer, oval mark that follows the pen's direction — tunable per brush), palm rejection (once a stylus is used, fingers only navigate). |
+| **Animation** | **Animation Assist**: each layer is a frame. Timeline with thumbnails, onion skins (1–6 frames each side, colored red/green), playback at 1–60 fps in Loop, Ping-Pong or One Shot, per-frame hold, fixed background/foreground layers, duplicate/delete frames, and export to **animated GIF** or **MP4/WebM video**. |
 | **Paint · Smudge · Erase** | Each tool picks its own brush, size and opacity. Smudge pulls and blends paint; eraser works with any brush. |
 | **QuickShape** | Hold at the end of a stroke and it snaps to a perfect line, arc, polyline, triangle, rectangle, polygon, circle or ellipse. |
 | **Layers** | Up to ~60 layers (depending on canvas size), opacity, 17 blend modes, alpha lock, clipping masks, reference layer, rename, duplicate, merge down, reorder, fill, clear, invert, hide, background color. |
@@ -25,7 +27,7 @@ A pocket sketching & painting studio for **iPhone and Android**, built with a fa
 | **Time-lapse** | Every stroke is recorded; replay it or export an MP4/WebM video. |
 | **Works offline** | Service worker for the web version; the native apps bundle everything. |
 
-Keyboard (iPad/desktop): `B` brush · `S` smudge · `E` eraser · `L` selection · `V` transform · `I` eyedropper · `[` `]` size · `⌘/Ctrl+Z` undo · `⇧⌘Z` redo · `⌘0` fit · `Tab` hide UI · `Esc` cancel.
+Keyboard (iPad/desktop): `P` play animation · `,` `.` previous/next frame · `B` brush · `S` smudge · `E` eraser · `L` selection · `V` transform · `I` eyedropper · `[` `]` size · `⌘/Ctrl+Z` undo · `⇧⌘Z` redo · `⌘0` fit · `Tab` hide UI · `Esc` cancel.
 
 ## Project layout
 
@@ -41,6 +43,8 @@ www/                 the whole app (plain ES modules, no build step)
   js/storage.js      IndexedDB gallery
   js/psd.js          layered PSD writer
   js/timelapse.js    recording, replay, video export
+  js/animation.js    Animation Assist: frames, onion skins, timeline, playback, export
+  js/gif.js          animated GIF encoder (median-cut palette + LZW)
 resources/           app icons + splash screens for the native apps
 scripts/setup-native.mjs  generates android/ and ios/ with Capacitor and applies icons & permissions
 ```
@@ -62,7 +66,7 @@ npm start            # serves www/ at http://localhost:8080
 
 ### iPhone / iPad
 
-Apple only allows iOS apps to be built on a Mac:
+Apple Pencil works on iPad (Apple doesn't support Pencil on iPhone). Apple only allows iOS apps to be built on a Mac:
 
 1. Install Xcode 16+ on a Mac, clone this repo, run `npm install`.
 2. `npm run ios` — creates the iOS project and opens it in Xcode.
