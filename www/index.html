@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#111114">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Quillpad">
+  <meta name="description" content="Quillpad — a pocket sketching and painting studio for phones.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/app.css">
+  <title>Quillpad</title>
+</head>
+<body>
+  <section id="gallery" class="screen">
+    <header class="g-head">
+      <h1>Quillpad</h1>
+      <div class="g-actions">
+        <button id="g-import" class="g-btn">Import</button>
+        <button id="g-new" class="g-btn primary" aria-label="New canvas">+ New</button>
+      </div>
+    </header>
+    <div id="g-grid" class="g-grid"></div>
+  </section>
+
+  <section id="editor" class="screen hidden">
+    <canvas id="stage"></canvas>
+
+    <header id="topbar">
+      <div class="tb-group">
+        <button id="btn-gallery" class="tb text" data-icon="gallery" title="Back to gallery"><span class="tb-label">Gallery</span></button>
+        <button id="btn-actions" class="tb" data-icon="actions" data-sheet="actions" title="Actions"></button>
+        <button id="btn-adjust" class="tb" data-icon="adjust" data-sheet="adjust" title="Adjustments"></button>
+        <button id="btn-select" class="tb" data-icon="select" title="Selection"></button>
+        <button id="btn-transform" class="tb" data-icon="transform" title="Transform"></button>
+      </div>
+      <button id="art-title" class="art-title" title="Rename">Untitled</button>
+      <div class="tb-group">
+        <button class="tb tool" data-tool="brush" data-icon="brush" data-sheet="brush" title="Paint (tap again for brushes)"></button>
+        <button class="tb tool" data-tool="smudge" data-icon="smudge" data-sheet="brush" title="Smudge"></button>
+        <button class="tb tool" data-tool="eraser" data-icon="eraser" data-sheet="brush" title="Erase"></button>
+        <button id="btn-layers" class="tb" data-icon="layers" data-sheet="layers" title="Layers"></button>
+        <button id="btn-color" class="color-btn" data-sheet="color" title="Colors (drag onto the canvas to fill)"><span></span></button>
+      </div>
+    </header>
+
+    <aside id="sidebar">
+      <div class="vslider" id="size-slider" title="Brush size"><div class="fill"></div><div class="thumb"></div></div>
+      <button id="btn-eyedrop" class="sb" data-icon="eyedrop" title="Eyedropper"></button>
+      <div class="vslider" id="opacity-slider" title="Opacity"><div class="fill"></div><div class="thumb"></div></div>
+      <button id="btn-undo" class="sb disabled" data-icon="undo" title="Undo"></button>
+      <button id="btn-redo" class="sb disabled" data-icon="redo" title="Redo"></button>
+    </aside>
+
+    <div id="contextbar" class="hidden"></div>
+    <div id="hud" class="hidden"></div>
+  </section>
+
+  <div id="loupe" class="hidden"><div class="loupe-top"></div><div class="loupe-bottom"></div></div>
+  <div id="sheet-backdrop" class="hidden"></div>
+  <div id="sheet" class="hidden">
+    <div class="sheet-head"><h2 class="sheet-title"></h2><button class="sheet-close" aria-label="Close">Done</button></div>
+    <div class="sheet-body"></div>
+  </div>
+  <div id="modal" class="hidden"></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <div id="drag-dot" class="hidden"></div>
+  <input type="file" id="file-input" accept="image/*" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
