@@ -33,6 +33,7 @@ export const app = {
     pressureGamma: 1,
     fillThreshold: 28,
     quickShape: true,
+    useTilt: true,
   },
 
   // working canvases (document sized)

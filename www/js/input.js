@@ -41,6 +41,26 @@ function pressureOf(e, speed) {
   return 1;
 }
 
+// Stylus tilt -> { alt, az } with azimuth converted into document space, or null
+function tiltOf(e) {
+  if (e.pointerType !== 'pen' || !app.settings.useTilt) return null;
+  let alt = e.altitudeAngle, az = e.azimuthAngle;
+  if (typeof alt !== 'number' || typeof az !== 'number') {
+    const tx = ((e.tiltX || 0) * Math.PI) / 180, ty = ((e.tiltY || 0) * Math.PI) / 180;
+    if (!tx && !ty) { alt = Math.PI / 2; az = 0; } else {
+      const t = Math.hypot(Math.tan(tx), Math.tan(ty));
+      alt = Math.atan(1 / t);
+      az = Math.atan2(Math.tan(ty), Math.tan(tx));
+    }
+  }
+  const v = app.view;
+  const viewRot = Math.atan2(v.b, v.a);
+  const flipped = v.a * v.d - v.b * v.c < 0;
+  let docAz = az - viewRot;
+  if (flipped) docAz = Math.PI - (az + viewRot);
+  return { alt, az: docAz };
+}
+
 function touchCanDraw() {
   const s = app.settings.fingerDraw;
   if (s === 'on') return true;
@@ -137,7 +157,7 @@ function onDown(e) {
     drawType = e.pointerType;
     drawStart = now;
     shapeAnchor = { ...pt };
-    beginStroke(dp.x, dp.y, pressureOf(e, 0));
+    beginStroke(dp.x, dp.y, pressureOf(e, 0), tiltOf(e));
     if (touch) {
       holdTimer = setTimeout(() => {
         const p = pointers.get(drawId);
@@ -175,7 +195,7 @@ function onMove(e) {
       const r = stage.getBoundingClientRect();
       for (const ev of evs) {
         const dp = screenToDoc(ev.clientX - r.left, ev.clientY - r.top);
-        app.stroke.add(dp.x, dp.y, pressureOf(ev, speed));
+        app.stroke.add(dp.x, dp.y, pressureOf(ev, speed), tiltOf(ev));
       }
       if (Math.hypot(p.x - p.sx, p.y - p.sy) > 8) { clearTimeout(holdTimer); holdTimer = 0; }
       if (!shapeAnchor || Math.hypot(pt.x - shapeAnchor.x, pt.y - shapeAnchor.y) > 3) {

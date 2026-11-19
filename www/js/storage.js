@@ -99,7 +99,7 @@ async function doSave() {
   const thumb = await makeThumb(d);
   const art = {
     id: app.artId, name: app.artName, width: d.width, height: d.height, created: app.created || now, modified: now,
-    bgColor: d.bgColor, bgVisible: d.bgVisible, activeIndex: d.activeIndex, layers,
+    bgColor: d.bgColor, bgVisible: d.bgVisible, activeIndex: d.activeIndex, layers, anim: { ...d.anim },
   };
   await tx('art', 'readwrite', (s) => s.put(art));
   await tx('meta', 'readwrite', (s) => s.put({ id: app.artId, name: app.artName, width: d.width, height: d.height, modified: now, thumb }));
@@ -112,9 +112,10 @@ export async function loadArtwork(id) {
   const d = new Doc(a.width, a.height);
   d.bgColor = a.bgColor || '#ffffff';
   d.bgVisible = a.bgVisible !== false;
+  if (a.anim) Object.assign(d.anim, a.anim);
   for (const ld of a.layers) {
     const l = new Layer(a.width, a.height, ld.name);
-    l.setProps({ visible: ld.visible !== false, opacity: ld.opacity ?? 1, blend: ld.blend || 'source-over', alphaLock: !!ld.alphaLock, clip: !!ld.clip, reference: !!ld.reference });
+    l.setProps({ visible: ld.visible !== false, opacity: ld.opacity ?? 1, blend: ld.blend || 'source-over', alphaLock: !!ld.alphaLock, clip: !!ld.clip, reference: !!ld.reference, hold: ld.hold || 1 });
     if (ld.png) {
       const img = await blobToImage(ld.png);
       l.ctx.drawImage(img, 0, 0);

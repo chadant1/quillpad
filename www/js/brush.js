@@ -8,6 +8,7 @@ const BASE = {
   shape: 'round', hardness: 0.8, grain: 0, spacing: 0.08, sizeMin: 0.2, opacityPressure: 0,
   flow: 1, jitterSize: 0, jitterAngle: 0, scatter: 0, angle: 0, follow: false, roundness: 1,
   streamline: 0.3, taper: 0, sizeDefault: 14, quickShape: true,
+  tiltSize: 0, tiltOpacity: 0, tiltShape: 0, tiltThreshold: 60,
 };
 
 export const BRUSH_SETTINGS = [
@@ -24,6 +25,10 @@ export const BRUSH_SETTINGS = [
   ['grain', 'Grain', 0, 1, 0.01],
   ['angle', 'Angle', 0, 180, 1],
   ['roundness', 'Roundness', 0.05, 1, 0.01],
+  ['tiltSize', 'Tilt → size', 0, 1, 0.01],
+  ['tiltOpacity', 'Tilt → opacity', 0, 1, 0.01],
+  ['tiltShape', 'Tilt → shading shape', 0, 1, 0.01],
+  ['tiltThreshold', 'Tilt starts below', 20, 85, 1],
 ];
 
 const RAW_PRESETS = [
@@ -31,13 +36,13 @@ const RAW_PRESETS = [
   { id: 'tech-pen', name: 'Technical Pen', group: 'Inking', hardness: 1, spacing: 0.04, sizeMin: 1, streamline: 0.4 },
   { id: 'monoline', name: 'Monoline', group: 'Inking', hardness: 1, spacing: 0.04, sizeMin: 1, streamline: 0.85 },
   { id: 'calligraphy', name: 'Calligraphy', group: 'Inking', hardness: 1, spacing: 0.03, sizeMin: 0.35, roundness: 0.22, angle: 40, streamline: 0.45 },
-  { id: 'pencil', name: 'Sketch Pencil', group: 'Sketching', shape: 'round', hardness: 0.75, grain: 0.75, spacing: 0.1, sizeMin: 0.55, opacityPressure: 0.8, flow: 0.55, jitterAngle: 180, streamline: 0.15, sizeDefault: 6 },
-  { id: 'charcoal', name: 'Charcoal', group: 'Sketching', shape: 'charcoal', hardness: 0.5, spacing: 0.12, sizeMin: 0.5, opacityPressure: 0.7, flow: 0.7, jitterAngle: 180, scatter: 0.08, streamline: 0.1, sizeDefault: 24 },
-  { id: 'marker', name: 'Marker', group: 'Painting', hardness: 0.92, spacing: 0.05, sizeMin: 0.85, flow: 1, streamline: 0.3, sizeDefault: 26 },
-  { id: 'gouache', name: 'Gouache', group: 'Painting', shape: 'bristle', hardness: 0.6, spacing: 0.04, sizeMin: 0.6, opacityPressure: 0.3, flow: 0.8, angle: 90, follow: true, streamline: 0.25, sizeDefault: 40 },
-  { id: 'wash', name: 'Watercolor Wash', group: 'Painting', hardness: 0.25, spacing: 0.06, sizeMin: 0.7, opacityPressure: 0.6, flow: 0.06, grain: 0.35, streamline: 0.3, sizeDefault: 70 },
-  { id: 'soft-airbrush', name: 'Soft Airbrush', group: 'Airbrushing', hardness: 0, spacing: 0.08, sizeMin: 1, opacityPressure: 1, flow: 0.07, streamline: 0.2, sizeDefault: 90, quickShape: false },
-  { id: 'hard-airbrush', name: 'Hard Airbrush', group: 'Airbrushing', hardness: 0.92, spacing: 0.06, sizeMin: 1, opacityPressure: 1, flow: 0.18, streamline: 0.2, sizeDefault: 40 },
+  { id: 'pencil', name: 'Sketch Pencil', group: 'Sketching', shape: 'round', hardness: 0.75, grain: 0.75, spacing: 0.1, sizeMin: 0.55, opacityPressure: 0.8, flow: 0.55, jitterAngle: 180, streamline: 0.15, sizeDefault: 6, tiltSize: 0.9, tiltOpacity: 0.55, tiltShape: 0.8 },
+  { id: 'charcoal', name: 'Charcoal', group: 'Sketching', shape: 'charcoal', hardness: 0.5, spacing: 0.12, sizeMin: 0.5, opacityPressure: 0.7, flow: 0.7, jitterAngle: 180, scatter: 0.08, streamline: 0.1, sizeDefault: 24, tiltSize: 0.8, tiltOpacity: 0.35, tiltShape: 0.7 },
+  { id: 'marker', name: 'Marker', group: 'Painting', hardness: 0.92, spacing: 0.05, sizeMin: 0.85, flow: 1, streamline: 0.3, sizeDefault: 26, tiltSize: 0.4, tiltShape: 0.5 },
+  { id: 'gouache', name: 'Gouache', group: 'Painting', shape: 'bristle', hardness: 0.6, spacing: 0.04, sizeMin: 0.6, opacityPressure: 0.3, flow: 0.8, angle: 90, follow: true, streamline: 0.25, sizeDefault: 40, tiltSize: 0.4 },
+  { id: 'wash', name: 'Watercolor Wash', group: 'Painting', hardness: 0.25, spacing: 0.06, sizeMin: 0.7, opacityPressure: 0.6, flow: 0.06, grain: 0.35, streamline: 0.3, sizeDefault: 70, tiltSize: 0.5, tiltOpacity: 0.2 },
+  { id: 'soft-airbrush', name: 'Soft Airbrush', group: 'Airbrushing', hardness: 0, spacing: 0.08, sizeMin: 1, opacityPressure: 1, flow: 0.07, streamline: 0.2, sizeDefault: 90, quickShape: false, tiltSize: 0.6, tiltOpacity: 0.3, tiltShape: 0.4 },
+  { id: 'hard-airbrush', name: 'Hard Airbrush', group: 'Airbrushing', hardness: 0.92, spacing: 0.06, sizeMin: 1, opacityPressure: 1, flow: 0.18, streamline: 0.2, sizeDefault: 40, tiltSize: 0.5, tiltShape: 0.4 },
   { id: 'spray', name: 'Spray Paint', group: 'Airbrushing', shape: 'spatter', hardness: 1, spacing: 0.25, sizeMin: 0.6, opacityPressure: 0.5, flow: 0.9, jitterSize: 0.4, jitterAngle: 180, scatter: 0.3, streamline: 0.1, sizeDefault: 70, quickShape: false },
   { id: 'square', name: 'Pixel Square', group: 'Retro', shape: 'square', hardness: 1, spacing: 0.25, sizeMin: 1, streamline: 0, sizeDefault: 8 },
 ];
@@ -252,8 +257,18 @@ export class Stroke {
     return this.size * (pr.sizeMin + (1 - pr.sizeMin) * p);
   }
 
-  add(x, y, pressure) {
+  // tilt: { alt, az } in radians (altitude above the screen, azimuth in document space) or null
+  add(x, y, pressure, tilt) {
     if (this.shaped) return;
+    if (tilt) {
+      if (!this.tiltS) this.tiltS = { alt: tilt.alt, cx: Math.cos(tilt.az), cy: Math.sin(tilt.az) };
+      else {
+        const k = 0.35;
+        this.tiltS.alt += (tilt.alt - this.tiltS.alt) * k;
+        this.tiltS.cx += (Math.cos(tilt.az) - this.tiltS.cx) * k;
+        this.tiltS.cy += (Math.sin(tilt.az) - this.tiltS.cy) * k;
+      }
+    }
     const s = this.p.streamline;
     if (!this.sm) {
       this.sm = { x, y };
@@ -323,9 +338,20 @@ export class Stroke {
       diam *= 0.15 + 0.85 * t;
     }
     if (pr.jitterSize) diam *= 1 - pr.jitterSize * Math.random();
-    if (diam < 0.25) return;
     let alpha = pr.flow * (1 - pr.opacityPressure + pr.opacityPressure * p);
     let ang = pr.angle * DEG + (pr.follow ? dir : 0);
+    let round = pr.roundness;
+    // stylus tilt: lay the pencil down to shade with its side
+    const tf = this.tiltFactor();
+    if (tf > 0) {
+      diam *= 1 + pr.tiltSize * 2.2 * tf;
+      alpha *= 1 - pr.tiltOpacity * 0.75 * tf;
+      if (pr.tiltShape > 0) {
+        round *= 1 - pr.tiltShape * 0.7 * tf;
+        ang = Math.atan2(this.tiltS.cy, this.tiltS.cx);
+      }
+    }
+    if (diam < 0.25) return;
     if (pr.jitterAngle) ang += (Math.random() * 2 - 1) * pr.jitterAngle * DEG;
     let ox = x, oy = y;
     if (pr.scatter) {
@@ -335,15 +361,27 @@ export class Stroke {
     for (const f of this.sym) {
       const [mx, my, ma, flip] = f(ox, oy, ang);
       if (this.mode === 'smudge') this.smudgeDab(mx, my, diam, p);
-      else this.dab(mx, my, diam, alpha, ma, flip);
+      else this.dab(mx, my, diam, alpha, ma, flip, round);
     }
   }
 
-  dab(x, y, diam, alpha, ang, flip) {
+  // 0 = pen upright (or no tilt data), 1 = pen laid nearly flat
+  tiltFactor() {
+    const t = this.tiltS;
+    if (!t) return 0;
+    const pr = this.p;
+    if (!(pr.tiltSize || pr.tiltOpacity || pr.tiltShape)) return 0;
+    const altDeg = t.alt / DEG;
+    const thr = pr.tiltThreshold;
+    if (altDeg >= thr) return 0;
+    return Math.min(1, (thr - altDeg) / Math.max(5, thr - 15));
+  }
+
+  dab(x, y, diam, alpha, ang, flip, round = this.p.roundness) {
     const ctx = this.ctx;
     const tip = pickLevel(this.levels, diam);
     const s = diam / tip.width;
-    const sy = s * this.p.roundness * flip;
+    const sy = s * round * flip;
     const c = Math.cos(ang), si = Math.sin(ang);
     ctx.globalAlpha = Math.min(1, alpha);
     ctx.setTransform(c * s, si * s, -si * sy, c * sy, x, y);

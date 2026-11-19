@@ -39,6 +39,7 @@ export class Layer {
     this.alphaLock = false;
     this.clip = false;
     this.reference = false;
+    this.hold = 1; // animation: how many frame-durations this frame is shown
     this.version = 1;
     this.savedVersion = 0;
     this.blob = null;
@@ -46,7 +47,7 @@ export class Layer {
   props() {
     return {
       name: this.name, visible: this.visible, opacity: this.opacity,
-      blend: this.blend, alphaLock: this.alphaLock, clip: this.clip, reference: this.reference,
+      blend: this.blend, alphaLock: this.alphaLock, clip: this.clip, reference: this.reference, hold: this.hold,
     };
   }
   setProps(p) { Object.assign(this, p); }
@@ -62,8 +63,42 @@ export class Doc {
     this.bgColor = '#ffffff';
     this.bgVisible = true;
     this.selection = null; // { polys: [[{x,y}...]], inverted }
+    this.anim = defaultAnim();
     this._s1 = null;
     this._s2 = null;
+    this._s3 = null;
+  }
+
+  // ---- animation helpers: every top-level layer (plus layers clipped to it) is one frame
+  groups() {
+    const L = this.layers, out = [];
+    for (let i = 0; i < L.length;) {
+      let j = i + 1;
+      while (j < L.length && L[j].clip) j++;
+      out.push({ start: i, end: j });
+      i = j;
+    }
+    return out;
+  }
+
+  animParts() {
+    let frames = this.groups();
+    let bg = null, fg = null;
+    if (this.anim.bgBottom && frames.length > 1) { bg = frames[0]; frames = frames.slice(1); }
+    if (this.anim.fgTop && frames.length > 1) { fg = frames[frames.length - 1]; frames = frames.slice(0, -1); }
+    return { bg, fg, frames };
+  }
+
+  frameIndexOfLayer(i) {
+    return this.animParts().frames.findIndex((f) => i >= f.start && i < f.end);
+  }
+
+  syncAnimFrame() {
+    if (!this.anim.enabled) return;
+    const fi = this.frameIndexOfLayer(this.activeIndex);
+    if (fi >= 0) this.anim.current = fi;
+    const n = this.animParts().frames.length;
+    if (this.anim.current >= n) this.anim.current = Math.max(0, n - 1);
   }
 
   get active() { return this.layers[this.activeIndex]; }
@@ -89,9 +124,10 @@ export class Doc {
     return 'Layer ' + n;
   }
 
-  // Composite all layers into ctx (document coordinate space).
+  // Composite into ctx (document coordinate space).
   // overrides: Map(layer -> canvas) used for live previews.
-  composite(ctx, overrides = null, background = true) {
+  // opts: { frame, onion } for animation mode.
+  composite(ctx, overrides = null, background = true, opts = {}) {
     const W = this.width, H = this.height;
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
@@ -99,12 +135,57 @@ export class Doc {
       ctx.fillStyle = this.bgColor;
       ctx.fillRect(0, 0, W, H);
     }
+    const a = this.anim;
+    const parts = a.enabled ? this.animParts() : null;
+    if (parts && parts.frames.length) {
+      const { bg, fg, frames } = parts;
+      const cur = Math.max(0, Math.min(frames.length - 1, opts.frame ?? a.current));
+      if (bg) this.drawRange(ctx, bg.start, bg.end, overrides);
+      if (opts.onion && a.onionCount > 0) {
+        for (let d = a.onionCount; d >= 1; d--) {
+          const alpha = a.onionOpacity * (1 - (d - 1) / (a.onionCount + 0.5));
+          if (frames[cur - d]) this.drawOnion(ctx, frames[cur - d], overrides, alpha, a.onionTint ? '#ff3b55' : null);
+          if (frames[cur + d]) this.drawOnion(ctx, frames[cur + d], overrides, alpha, a.onionTint ? '#26c281' : null);
+        }
+      }
+      this.drawRange(ctx, frames[cur].start, frames[cur].end, overrides);
+      if (fg) this.drawRange(ctx, fg.start, fg.end, overrides);
+    } else {
+      this.drawRange(ctx, 0, this.layers.length, overrides);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+  }
+
+  drawOnion(ctx, fr, overrides, alpha, tint) {
+    const s = this.scratch(3), sc = s.getContext('2d');
+    sc.globalCompositeOperation = 'source-over';
+    sc.globalAlpha = 1;
+    sc.clearRect(0, 0, this.width, this.height);
+    this.drawRange(sc, fr.start, fr.end, overrides);
+    if (tint) {
+      sc.globalCompositeOperation = 'source-atop';
+      sc.globalAlpha = 0.6;
+      sc.fillStyle = tint;
+      sc.fillRect(0, 0, this.width, this.height);
+      sc.globalCompositeOperation = 'source-over';
+      sc.globalAlpha = 1;
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(s, 0, 0);
+    ctx.globalAlpha = 1;
+  }
+
+  // Draw layers [a, b) with clipping groups, opacity and blend modes
+  drawRange(ctx, a, b, overrides = null) {
+    const W = this.width, H = this.height;
     const L = this.layers;
     const src = (l) => (overrides && overrides.get(l)) || l.canvas;
-    for (let i = 0; i < L.length; i++) {
+    for (let i = a; i < b; i++) {
       const base = L[i];
       let j = i + 1;
-      while (j < L.length && L[j].clip) j++;
+      while (j < b && L[j].clip) j++;
       if (base.visible && base.opacity > 0) {
         const clips = [];
         for (let k = i + 1; k < j; k++) if (L[k].visible && L[k].opacity > 0) clips.push(L[k]);
@@ -136,6 +217,10 @@ export class Doc {
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
   }
+}
+
+export function defaultAnim() {
+  return { enabled: false, fps: 12, loop: 'loop', onionCount: 2, onionOpacity: 0.45, onionTint: true, bgBottom: false, fgTop: false, current: 0 };
 }
 
 function drawWith(ctx, src, alpha, blend) {

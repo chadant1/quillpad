@@ -8,6 +8,7 @@ import { setupUI, syncEditorUI, closeSheet, onDocChanged, loadPrefs, savePrefs, 
 import { setupGallery, renderGallery } from './gallery.js';
 import { saveCurrent, loadArtwork } from './storage.js';
 import { scheduleFrame } from './timelapse.js';
+import { syncAnimUI, scheduleTimeline, stopPlayback, togglePlayback, goToFrame } from './animation.js';
 
 let saveTimer = 0;
 function scheduleSave() {
@@ -57,12 +58,15 @@ function enterEditor(doc) {
   $('#art-title').textContent = app.artName;
   if (!['brush', 'eraser', 'smudge'].includes(app.tool)) app.tool = 'brush';
   syncEditorUI();
+  syncAnimUI();
   edited.call(null);
   app.editVersion = 0;
   history.clear();
 }
 
 async function backToGallery() {
+  stopPlayback();
+  document.body.classList.remove('anim-on');
   if (app.stroke) E.commitStroke();
   if (app.xf) E.commitTransform();
   if (app.adjust) E.commitAdjust();
@@ -103,6 +107,9 @@ function setupKeyboard() {
         if (app.xf) { E.cancelTransform(); setTool(app.lastPaintTool || 'brush'); } else if (app.adjust) { E.cancelAdjust(); renderContextBar(); } else if (app.doc && app.doc.selection) { E.deselect(); } else closeSheet();
         break;
       case 'tab': e.preventDefault(); app.toggleUI(); break;
+      case 'p': if (app.doc && app.doc.anim.enabled) togglePlayback(); break;
+      case ',': if (app.doc && app.doc.anim.enabled) goToFrame(app.doc.anim.current - 1); break;
+      case '.': if (app.doc && app.doc.anim.enabled) goToFrame(app.doc.anim.current + 1); break;
     }
   });
 }
@@ -124,12 +131,13 @@ function init() {
   app.stage = $('#stage');
   app.sctx = app.stage.getContext('2d');
   app.render = E.render;
-  app.onEdit = () => { scheduleSave(); scheduleFrame(); onDocChanged(); };
+  app.onEdit = () => { scheduleSave(); scheduleFrame(); onDocChanged(); scheduleTimeline(); };
   app.onColor = () => updateColorButton();
   app.colorHex = () => hsvToHex(app.color);
   app.setColorRGB = (r, g, b) => { app.color = rgbToHsv(r, g, b); updateColorButton(); E.addRecentColor(rgbToHex(r, g, b)); savePrefs(); };
   app.toggleUI = () => { app.uiHidden = !app.uiHidden; document.body.classList.toggle('ui-hidden', app.uiHidden); };
-  app.onStrokeStart = () => closeSheet();
+  app.onStrokeStart = () => { closeSheet(); stopPlayback(); };
+  app.onLayerChangeHook = scheduleTimeline;
 
   setupFilePicker();
   setupUI();

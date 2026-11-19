@@ -122,7 +122,8 @@ export function rebuildComp() {
     pc.setTransform(1, 0, 0, 1, 0, 0);
     ov = new Map([[x.layer, app.previewCanvas]]);
   }
-  d.composite(cc, ov);
+  d.syncAnimFrame();
+  d.composite(cc, ov, true, app.animPlaying ? { frame: app.playFrame } : { onion: true });
 }
 
 export function render() {
@@ -251,7 +252,7 @@ export function canPaint() {
   return true;
 }
 
-export function beginStroke(x, y, p) {
+export function beginStroke(x, y, p, tilt) {
   const d = app.doc, layer = d.active;
   const tool = app.tool;
   const t = app.tools[tool];
@@ -263,7 +264,7 @@ export function beginStroke(x, y, p) {
     mode, preset: getPreset(t.preset), color: currentHex(), size: t.size, opacity: t.opacity,
     layer, doc: d, strokeCanvas: app.strokeCanvas, symmetry: app.symmetry, clipPath,
   });
-  app.stroke.add(x, y, p);
+  app.stroke.add(x, y, p, tilt);
   requestRender();
 }
 

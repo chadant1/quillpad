@@ -11,6 +11,7 @@ import { armEyedropper } from './input.js';
 import { saveBlob, safeName } from './share.js';
 import { encodePSD } from './psd.js';
 import { replayTimelapse, exportTimelapse } from './timelapse.js';
+import { setAnimEnabled, openAnimSettings, exportAnimation } from './animation.js';
 
 const PREFS_KEY = 'quillpad.prefs';
 
@@ -655,6 +656,8 @@ function buildActions(body) {
   } else if (actionsTab === 'canvas') {
     box.append(row('fit', 'Fit canvas to screen', () => { E.fitView(); closeSheet(); }));
     box.append(row('canvas', 'Actual size (100%)', () => { E.actualSize(); closeSheet(); }));
+    box.append(toggleRow('Animation Assist (frame-by-frame)', () => d.anim.enabled, (v) => setAnimEnabled(v)));
+    if (d.anim.enabled) box.append(row('film', 'Animation settings & export', () => openAnimSettings()));
     box.append(toggleRow('Mirror view (non-destructive)', () => app.viewFlipped, () => E.toggleFlipView()));
     box.append(row('flipH', 'Flip canvas horizontally', () => E.flipCanvas(true)));
     box.append(row('flipV', 'Flip canvas vertically', () => E.flipCanvas(false)));
@@ -672,6 +675,12 @@ function buildActions(body) {
     box.append(row('copy', 'Share current layer as PNG', () => run('Preparing layer', async () => saveBlob(await canvasToBlob(app.doc.active.canvas, 'image/png'), name + '-' + safeName(app.doc.active.name) + '.png'))));
   } else if (actionsTab === 'video') {
     box.append(el('div', { class: 'info' }, `${app.frames.length} time-lapse frames recorded for this artwork.`));
+    if (d.anim.enabled) {
+      box.append(row('film', 'Export animation as GIF', () => { closeSheet(); exportAnimation('gif'); }));
+      box.append(row('film', 'Export animation as video', () => { closeSheet(); exportAnimation('video'); }));
+    } else {
+      box.append(row('film', 'Make an animation (turn on Animation Assist)', () => { setAnimEnabled(true); closeSheet(); }));
+    }
     box.append(row('play', 'Time-lapse replay', () => { closeSheet(); replayTimelapse(); }));
     box.append(row('video', 'Export time-lapse video', () => { closeSheet(); exportTimelapse(); }));
   } else {
@@ -682,9 +691,10 @@ function buildActions(body) {
     box.append(toggleRow('Tap gestures (2-finger undo, 3-finger redo, 4-finger full screen)', () => app.settings.gestures, (v) => { app.settings.gestures = v; }));
     box.append(toggleRow('QuickShape', () => app.settings.quickShape, (v) => { app.settings.quickShape = v; }));
     box.append(toggleRow('Right-hand sidebar', () => app.settings.leftHanded, (v) => { app.settings.leftHanded = v; applyHandedness(); }));
+    box.append(toggleRow('Stylus tilt shading (Apple Pencil, S Pen)', () => app.settings.useTilt, (v) => { app.settings.useTilt = v; }));
     box.append(sliderRow('Stylus pressure curve', 0.4, 2.5, 0.05, () => app.settings.pressureGamma, (v) => { app.settings.pressureGamma = v; }, (v) => (v < 1 ? 'Soft ' : v > 1 ? 'Firm ' : 'Linear ') + v.toFixed(2), savePrefs));
     box.append(sliderRow('ColorDrop threshold', 0, 120, 1, () => app.settings.fillThreshold, (v) => { app.settings.fillThreshold = v; }, (v) => Math.round((v / 120) * 100) + '%', savePrefs));
-    box.append(el('div', { class: 'info small' }, 'Quillpad — open-source sketching & painting. Gestures: pinch to zoom/rotate, two-finger tap undo, three-finger tap redo, touch & hold for eyedropper, hold at end of a stroke for QuickShape, drag the color dot onto the canvas to fill.'));
+    box.append(el('div', { class: 'info small' }, 'Quillpad — open-source sketching & painting. Gestures: pinch to zoom/rotate, two-finger tap undo, three-finger tap redo, touch & hold for eyedropper, hold at end of a stroke for QuickShape, drag the color dot onto the canvas to fill. Animation Assist (Canvas tab) turns layers into frames with onion skins.'));
   }
 }
 
@@ -807,7 +817,7 @@ export function setupUI() {
   $('#sheet-backdrop').addEventListener('pointerdown', (e) => { e.preventDefault(); closeSheet(); });
   $('#sheet .sheet-close').addEventListener('click', () => closeSheet());
   app.onSelectionChange = () => { if (app.tool === 'select') renderContextBar(); };
-  app.onLayerChange = () => {};
+  app.onLayerChange = () => { if (app.onLayerChangeHook) app.onLayerChangeHook(); };
   applyHandedness();
   updateToolButtons();
   updateColorButton();
