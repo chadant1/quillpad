@@ -1,0 +1,60 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate the Android project (icons, splash, web app)
+        run: node scripts/setup-native.mjs android
+
+      - name: Build debug APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Rename APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk Quillpad.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Quillpad-android-apk
+          path: Quillpad.apk
+
+      - name: Publish to the "android-latest" release (direct phone download)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete android-latest --cleanup-tag -y || true
+          gh release create android-latest Quillpad.apk \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "Quillpad for Android (latest build)" \
+            --notes "Automatic build of commit $GITHUB_SHA. On your Android phone: download Quillpad.apk, open it and allow installing from this source."
